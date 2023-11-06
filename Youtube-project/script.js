@@ -7,9 +7,15 @@ const playAiBtnElem = document.getElementById("play-ai");
 IN_PROG = "IN_PROG";
 TIE = 'TIE';
 
-scores = {
+xSuperiorScores = {
     'X': 1,
     'O': -1,
+    'TIE': 0
+};
+
+oSuperiorScores = {
+    'X': -1,
+    'O': 1,
     'TIE': 0
 };
 
@@ -33,6 +39,7 @@ const winPatterns = [
 ]
 
 let currentTurn = 'X';
+let nextTurn = 'O';
 squaresElem.forEach((square, index) => {
     square.addEventListener("click", function() {
         addMark(square, index);
@@ -44,22 +51,23 @@ resetBtnElem.addEventListener("click", function() {
 });
 
 playAiBtnElem.addEventListener("click", function() {
-    playBestMove(gameBoard, 'X', 'O');
+    let scores = currentTurn === 'X' ? xSuperiorScores : oSuperiorScores;
+    playBestMove(gameBoard, currentTurn, nextTurn, scores);
     squaresElem.forEach((square, index) => {
         square.addEventListener("click", function() {
             addMark(square, index);
-            playBestMove(gameBoard, 'X', 'O');
+            playBestMove(gameBoard, currentTurn, nextTurn, scores);
         })
     });
 })
 
-function playBestMove(board, aiTurn, humanTurn) {
+function playBestMove(board, aiTurn, humanTurn, scores) {
     let maxScore = -Infinity;
     let bestMove;
     for (let i=0;i<board.length;i++) {
         if (board[i] === ' ') {
             board[i] = aiTurn;
-            let score = miniMax(board, humanTurn, false);
+            let score = miniMax(board, humanTurn, false, scores);
             board[i] = ' ';
             if (score > maxScore) {
                 maxScore = score;
@@ -85,7 +93,7 @@ function evaluateBoard(board) {
     return 'TIE';
 }
 
-function miniMax(board, currTurn, isMaximizing) {
+function miniMax(board, currTurn, isMaximizing, scores) {
     let result = evaluateBoard(board);
     if (result !== IN_PROG) {
         return scores[result];
@@ -96,8 +104,8 @@ function miniMax(board, currTurn, isMaximizing) {
         for (let i=0;i<board.length;i++) {
             if (board[i] === ' '){
                 board[i] = currTurn;
-                nextTurn = currTurn === 'O' ? 'X' : 'O';
-                let eval = miniMax(board, nextTurn, false);
+                let next = currTurn === 'O' ? 'X' : 'O';
+                let eval = miniMax(board, next, false, scores);
                 board[i] = ' ';
                 maxEval = Math.max(eval, maxEval);
             }
@@ -110,8 +118,8 @@ function miniMax(board, currTurn, isMaximizing) {
         for (let i=0;i<board.length;i++) {
             if (board[i] === ' '){
                 board[i] = currTurn;
-                nextTurn = currTurn === 'O' ? 'X' : 'O';
-                let eval = miniMax(board, nextTurn, true);
+                let next = currTurn === 'O' ? 'X' : 'O';
+                let eval = miniMax(board, next, true, scores);
                 board[i] = ' ';
                 minEval = Math.min(eval, minEval);
             }
@@ -139,7 +147,9 @@ function addMark(square, index) {
 }
 
 function changeTurn() {
-    currentTurn = currentTurn === 'X' ? 'O' : 'X';
+    let temp = currentTurn;
+    currentTurn = nextTurn;
+    nextTurn = temp;
     turnTextElem.textContent = currentTurn;
 }
 
